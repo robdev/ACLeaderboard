@@ -1,9 +1,13 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using HtmlAgilityPack;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using HtmlAgilityPack;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 
-namespace ACLeaderboardAPI.Controllers {
+namespace LeaderboardAPI.Controllers {
     [Route("api/leaderboard")]
     [ApiController]
     public class LeaderboardController : ControllerBase {
@@ -13,8 +17,8 @@ namespace ACLeaderboardAPI.Controllers {
 
             var decoded = System.Net.WebUtility.UrlDecode(url);
             List<LapTime> laps = await GetLapTimes(decoded);
-             
-            if(laps != null && laps.Count > 0) {
+
+            if (laps != null && laps.Count > 0) {
                 StringBuilder sb = new StringBuilder();
                 sb.Append("[table][tr][th]Pos.[/th][th]Name[/th][th]Car[/th][th]Time[/th][th]Gap[/th][th]Date[/th][/tr]");
                 foreach (var lap in laps) {
@@ -66,7 +70,7 @@ namespace ACLeaderboardAPI.Controllers {
                 time.Car = laptimeNodes.ElementAt(2).InnerHtml.Replace("\\n", "").Trim();
                 time.Time = laptimeNodes.ElementAt(3).InnerHtml;
                 time.Gap = laptimeNodes.ElementAt(4).InnerHtml;
-                time.Date = node.ChildNodes.Last(x=>x.Name == "td").InnerHtml;
+                time.Date = node.ChildNodes.Last(x => x.Name == "td").InnerHtml;
 
                 times.Add(time);
             }
@@ -75,7 +79,7 @@ namespace ACLeaderboardAPI.Controllers {
     }
 
     public class LapTime {
-        public string? Position { get; set;}
+        public string? Position { get; set; }
         public string? Name { get; set; }
         public string? Car { get; set; }
         public string? Time { get; set; }
