@@ -11,8 +11,9 @@ namespace ACLeaderboardAPI.Controllers {
         [HttpGet("gettablebb")]
         public async Task<string> GetTableBBCode(string url) {
 
-            List<LapTime> laps = await GetLapTimes(url);
-
+            var decoded = System.Net.WebUtility.UrlDecode(url);
+            List<LapTime> laps = await GetLapTimes(decoded);
+             
             if(laps != null && laps.Count > 0) {
                 StringBuilder sb = new StringBuilder();
                 sb.Append("[table][tr][th]Pos.[/th][th]Name[/th][th]Car[/th][th]Time[/th][th]Gap[/th][th]Date[/th][/tr]");
