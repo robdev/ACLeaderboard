@@ -6,11 +6,45 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using CoreHtmlToImage;
 
 namespace LeaderboardAPI.Controllers {
     [Route("api/leaderboard")]
     [ApiController]
     public class LeaderboardController : ControllerBase {
+
+        [HttpGet("getleaderboardimage")]
+        public async Task<IActionResult> GetLeaderboardImage(string url) {
+            var decoded = System.Net.WebUtility.UrlDecode(url);
+            List<LapTime> laps = await GetLapTimes(decoded);
+
+            if (laps != null && laps.Count > 0) {
+                StringBuilder sb = new StringBuilder();
+                sb.Append("<table><tr><th>Pos.</th><th>Name</th><th>Car</th><th>Time</th><th>Gap</th><th>Date</th></tr>");
+                foreach (var lap in laps) {
+                    sb.Append("<tr>");
+                    sb.Append(lap.Position);
+                    sb.Append("</tr><tr>");
+                    sb.Append(lap.Name);
+                    sb.Append("</tr><tr>");
+                    sb.Append(lap.Car);
+                    sb.Append("</tr><tr>");
+                    sb.Append(lap.Time);
+                    sb.Append("</tr><tr>");
+                    sb.Append(lap.Gap);
+                    sb.Append("</tr><tr>");
+                    sb.Append(lap.Date);
+                    sb.Append("</tr>");
+                }
+                sb.Append("</table>");
+
+                string html = sb.ToString();
+
+                byte[] img = new CoreHtmlToImage.HtmlConverter().FromHtmlString(html, 468, ImageFormat.Png, 100);
+                return File(img, "image/png");
+            }
+            return Ok();
+        }
 
         [HttpGet("gettablebb")]
         public async Task<string> GetTableBBCode(string url) {
