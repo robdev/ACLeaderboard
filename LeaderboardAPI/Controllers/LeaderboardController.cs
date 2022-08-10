@@ -20,27 +20,28 @@ namespace LeaderboardAPI.Controllers {
 
             if (laps != null && laps.Count > 0) {
                 StringBuilder sb = new StringBuilder();
-                sb.Append("<table><tr><th>Pos.</th><th>Name</th><th>Car</th><th>Time</th><th>Gap</th><th>Date</th></tr>");
+                sb.Append("<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\">");
+                sb.Append("<div style=\"width: 640px;\"><table class=\"table table-dark table-responsive table-striped\"><tr><th>Pos.</th><th>Name</th><th>Car</th><th>Time</th><th>Gap</th></tr>");
                 foreach (var lap in laps) {
-                    sb.Append("<tr>");
+                    sb.Append("<tr><td>");
                     sb.Append(lap.Position);
-                    sb.Append("</tr><tr>");
+                    sb.Append("</td><td>");
                     sb.Append(lap.Name);
-                    sb.Append("</tr><tr>");
+                    sb.Append("</td><td>");
                     sb.Append(lap.Car);
-                    sb.Append("</tr><tr>");
+                    sb.Append("</td><td>");
                     sb.Append(lap.Time);
-                    sb.Append("</tr><tr>");
+                    sb.Append("</td><td>");
                     sb.Append(lap.Gap);
-                    sb.Append("</tr><tr>");
-                    sb.Append(lap.Date);
-                    sb.Append("</tr>");
+                    //sb.Append("</td><td>");
+                    //sb.Append(lap.Date);
+                    //sb.Append("</td></tr>");
                 }
-                sb.Append("</table>");
+                sb.Append("</table></div>");
 
                 string html = sb.ToString();
 
-                byte[] img = new CoreHtmlToImage.HtmlConverter().FromHtmlString(html, 468, ImageFormat.Png, 100);
+                byte[] img = new CoreHtmlToImage.HtmlConverter().FromHtmlString(html, 640, ImageFormat.Png, 100);
                 return File(img, "image/png");
             }
             return Ok();
