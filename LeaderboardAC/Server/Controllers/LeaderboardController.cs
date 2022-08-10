@@ -7,8 +7,14 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using CoreHtmlToImage;
+using System.IO;
 
 namespace LeaderboardAPI.Controllers {
+
+    public static class Storage {
+        public static int LaptimesHash;
+    }
+
     [Route("api/leaderboard")]
     [ApiController]
     public class LeaderboardController : ControllerBase {
@@ -18,6 +24,10 @@ namespace LeaderboardAPI.Controllers {
             var decoded = System.Net.WebUtility.UrlDecode(url);
             List<LapTime> laps = await GetLapTimes(decoded);
 
+            var hash = laps.GetHashCode();
+            if (hash == Storage.LaptimesHash) {
+                return Ok();
+            }
             if (laps != null && laps.Count > 0) {
                 StringBuilder sb = new StringBuilder();
                 sb.Append("<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\">");
@@ -42,7 +52,15 @@ namespace LeaderboardAPI.Controllers {
                 string html = sb.ToString();
 
                 byte[] img = new CoreHtmlToImage.HtmlConverter().FromHtmlString(html, 640, ImageFormat.Png, 100);
-                return File(img, "image/png");
+
+                var folderName = Path.Combine("Resources", "Images");
+                var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+                using (var ms = new MemoryStream(img)) {
+                    using (var fs = new FileStream(pathToSave, FileMode.Create)) {
+                        ms.WriteTo(fs);
+                    }
+                }
+                return Ok();
             }
             return Ok();
         }
