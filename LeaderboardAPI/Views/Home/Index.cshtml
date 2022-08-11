@@ -5,10 +5,10 @@
     ViewData["Title"] = "Team Chill Surf - Touge Leaderboard";
 }
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-<div style="background-color: #0057b6; margin-top: 40px;" class="text-center">
-    <h2 class="display-4" style="font-size: 24px; padding: 10px; color: white;">@ViewBag.LeaderboardName</h2>
 
-    @*<img src="~/images/leaderboard.png" />*@
+<div style="background-color: #0057b6; margin-top: 40px;" class="text-center">
+
+    <h2 class="display-4" style="font-size: 24px; padding: 10px; color: white;">@ViewBag.LeaderboardName</h2>
 
     @if (ViewBag.LapTimes != null) {
         <table class="table table-sm  table-dark table-striped ">

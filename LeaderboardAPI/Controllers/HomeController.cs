@@ -1,6 +1,7 @@
 ﻿using HtmlAgilityPack;
 using LeaderboardAPI.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
@@ -21,6 +22,12 @@ namespace LeaderboardAPI.Controllers {
         }
 
         public async Task<IActionResult> Index(string track) {
+
+            List<SelectListItem> tracks = new List<SelectListItem>();
+            tracks.Add(new SelectListItem("Akagi", "akagi"));
+            tracks.Add(new SelectListItem("Tsushisaka", "tsushisaka"));
+            ViewBag.track = tracks;
+
             string url = "";
             string name = "Leaderboard";
             switch(track) {
