@@ -1,9 +1,34 @@
-﻿@{
-    ViewData["Title"] = "chill surf";
+﻿
+
+@{
+
+    ViewData["Title"] = "Team Chill Surf - Touge Leaderboard";
 }
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<div style="background-color: #1d1d1f; margin-top: 40px;" class="text-center">
+    <h1 class="display-4" style="font-size: 36px; padding: 30px; color: white;">Leaderboard - Akagi Downhill</h1>
 
-<div class="text-center">
-    <h1 class="display-4">Leaderboard - Akagi</h1>
+    @*<img src="~/images/leaderboard.png" />*@
 
-    <img src="~/images/leaderboard.png" />
+    <table  class="table table-dark table-striped ">
+        <tr>
+            <th>Pos.</th>
+            <th>Name</th>
+            <th>Car</th>
+            <th>Time</th>
+            <th>Gap</th>
+        </tr>
+        @foreach (LapTime time in ViewBag.LapTimes) {
+            <tr>
+                <td>@time.Position</td>
+                <td>@time.Name</td>
+                <td>@time.Car</td>
+                <td>@time.Time</td>
+                <td>@time.Gap</td>
+            </tr>
+
+        }
+
+    </table>
+
 </div>

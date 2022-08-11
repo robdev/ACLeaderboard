@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using CoreHtmlToImage;
 using System.IO;
 using Microsoft.AspNetCore.Hosting;
+using LeaderboardAPI.Models;
 
 namespace LeaderboardAPI.Controllers {
 
@@ -25,6 +26,45 @@ namespace LeaderboardAPI.Controllers {
             this.env = env;
         }
 
+        [HttpGet("getleaderboardhtml")]
+        public async Task<IActionResult> GetLeaderboardHtml(string url) {
+            var decoded = System.Net.WebUtility.UrlDecode(url);
+            List<LapTime> laps = await GetLapTimes(decoded);
+            if (laps == null || laps.Count == 0) {
+                return Ok();
+            }
+            var hash = laps.GetHashCode();
+            if (hash == Storage.LaptimesHash) {
+                return Ok();
+            }
+            if (laps != null && laps.Count > 0) {
+                StringBuilder sb = new StringBuilder();
+                sb.Append("<html style=\"padding-bottom: 0px; margin-bottom: 0px; display: block; height: auto;\"><link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\">");
+                sb.Append("<body style=\"display: block; background-color:  #ff33cc;\"><div style=\"display: block; width: auto; height: 100%; !important; padding-bottom: 0px, margin-bottom: 0px;\"><table class=\"table table-dark table-responsive table-striped\" style=\"display: block; height: 100%;\"><tr><th>Pos.</th><th>Name</th><th>Car</th><th>Time</th><th>Gap</th></tr>");
+                foreach (var lap in laps) {
+                    sb.Append("<tr><td>");
+                    sb.Append(lap.Position);
+                    sb.Append("</td><td>");
+                    sb.Append(lap.Name);
+                    sb.Append("</td><td>");
+                    sb.Append(lap.Car);
+                    sb.Append("</td><td>");
+                    sb.Append(lap.Time);
+                    sb.Append("</td><td>");
+                    sb.Append(lap.Gap);
+                    sb.Append("</tr>");
+                    //sb.Append("</td><td>");
+                    //sb.Append(lap.Date);
+                    //sb.Append("</td></tr>");
+                }
+
+                sb.Append("</table></div></body></html>");
+
+                string html = sb.ToString();
+                return Ok(html);
+            }
+            return Ok();
+        }
 
         [HttpGet("getleaderboardimage")]
         public async Task<IActionResult> GetLeaderboardImage(string url) {
@@ -141,12 +181,5 @@ namespace LeaderboardAPI.Controllers {
         }
     }
 
-    public class LapTime {
-        public string? Position { get; set; }
-        public string? Name { get; set; }
-        public string? Car { get; set; }
-        public string? Time { get; set; }
-        public string? Gap { get; set; }
-        public string? Date { get; set; }
-    }
 }
+
