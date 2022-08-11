@@ -1,6 +1,7 @@
 ﻿using HtmlAgilityPack;
 using LeaderboardAPI.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -12,13 +13,27 @@ using System.Threading.Tasks;
 namespace LeaderboardAPI.Controllers {
     public class HomeController : Controller {
         private readonly ILogger<HomeController> _logger;
+        private readonly IConfiguration config;
 
-        public HomeController(ILogger<HomeController> logger) {
+        public HomeController(ILogger<HomeController> logger, IConfiguration configuration) {
             _logger = logger;
+            config = configuration;
         }
 
-        public async Task<IActionResult> Index() {
-            ViewBag.LapTimes = await GetLapTimes("http://plugins.barnabysbestmotoring.emperorservers.com:9611/lapstat?track=ek_akagi-downhill_real&cars=ddm_mitsubishi_evo_iv_gsr,ddm_mugen_civic_ek9,ddm_nissan_skyline_bnr32,ddm_subaru_22b,ddm_toyota_mr2_sw20,ks_mazda_rx7_spirit_r,ks_nissan_skyline_r34,ks_toyota_ae86_tuned,ks_toyota_supra_mkiv,wdts_nissan_180sx,wdts_nissan_laurel_c33,wdts_nissan_silvia_s13,wdts_nissan_skyline_r32,wdts_toyota_ae86,wdts_toyota_mark_ii_jzx90&valid=1,2,0&date_from=&date_to=&groups=0&ranking=1");
+        public async Task<IActionResult> Index(string track) {
+            string url = "";
+            string name = "Leaderboard";
+            switch(track) {
+                case "akina":
+                default:
+                    return View();
+                case "akagi":
+                    url = config["UrlAkagi"];
+                    name = "Leaderboard - Akagi Downhill";
+                    break;
+            }
+            ViewBag.LeaderboardName = name;
+            ViewBag.LapTimes = await GetLapTimes(url);
             return View();
         }
 

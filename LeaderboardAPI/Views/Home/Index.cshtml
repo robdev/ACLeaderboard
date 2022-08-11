@@ -5,30 +5,33 @@
     ViewData["Title"] = "Team Chill Surf - Touge Leaderboard";
 }
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-<div style="background-color: #1d1d1f; margin-top: 40px;" class="text-center">
-    <h1 class="display-4" style="font-size: 36px; padding: 30px; color: white;">Leaderboard - Akagi Downhill</h1>
+<div style="background-color: #0057b6; margin-top: 40px;" class="text-center">
+    <h2 class="display-4" style="font-size: 24px; padding: 10px; color: white;">@ViewBag.LeaderboardName</h2>
 
     @*<img src="~/images/leaderboard.png" />*@
 
-    <table  class="table table-sm  table-dark table-striped ">
-        <tr>
-            <th>Pos.</th>
-            <th>Name</th>
-            <th>Car</th>
-            <th>Time</th>
-            <th>Gap</th>
-        </tr>
-        @foreach (LapTime time in ViewBag.LapTimes) {
+    @if (ViewBag.LapTimes != null) {
+        <table class="table table-sm  table-dark table-striped ">
             <tr>
-                <td>@time.Position</td>
-                <td>@time.Name</td>
-                <td>@time.Car</td>
-                <td>@time.Time</td>
-                <td>@time.Gap</td>
+                <th>Pos.</th>
+                <th>Name</th>
+                <th>Car</th>
+                <th>Time</th>
+                <th>Gap</th>
             </tr>
+            @foreach (LapTime time in ViewBag.LapTimes) {
+                <tr>
+                    <td>@time.Position</td>
+                    <td>@time.Name</td>
+                    <td>@time.Car</td>
+                    <td>@time.Time</td>
+                    <td>@time.Gap</td>
+                </tr>
 
-        }
+            }
 
-    </table>
+        </table>
+    }
+
 
 </div>
