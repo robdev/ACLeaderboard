@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using CoreHtmlToImage;
 using System.IO;
+using Microsoft.AspNetCore.Hosting;
 
 namespace LeaderboardAPI.Controllers {
 
@@ -18,6 +19,12 @@ namespace LeaderboardAPI.Controllers {
     [Route("api/leaderboard")]
     [ApiController]
     public class LeaderboardController : ControllerBase {
+
+        private readonly IHostingEnvironment env;
+        public LeaderboardController(IHostingEnvironment env) {
+            this.env = env;
+        }
+
 
         [HttpGet("getleaderboardimage")]
         public async Task<IActionResult> GetLeaderboardImage(string url) {
@@ -30,8 +37,8 @@ namespace LeaderboardAPI.Controllers {
             }
             if (laps != null && laps.Count > 0) {
                 StringBuilder sb = new StringBuilder();
-                sb.Append("<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\">");
-                sb.Append("<div style=\"width: 640px;\"><table class=\"table table-dark table-responsive table-striped\"><tr><th>Pos.</th><th>Name</th><th>Car</th><th>Time</th><th>Gap</th></tr>");
+                sb.Append("<html><link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\">");
+                sb.Append("<body style=\"background-color:  #ff33cc;\"><div style=\"width: 640px; height: auto !important; margin-bottom: 0px;\"><table class=\"table table-dark table-responsive table-striped\"><tr><th>Pos.</th><th>Name</th><th>Car</th><th>Time</th><th>Gap</th></tr>");
                 foreach (var lap in laps) {
                     sb.Append("<tr><td>");
                     sb.Append(lap.Position);
@@ -47,16 +54,15 @@ namespace LeaderboardAPI.Controllers {
                     //sb.Append(lap.Date);
                     //sb.Append("</td></tr>");
                 }
-                sb.Append("</table></div>");
+                sb.Append("</table></div></body></html>");
 
                 string html = sb.ToString();
 
                 byte[] img = new CoreHtmlToImage.HtmlConverter().FromHtmlString(html, 640, ImageFormat.Png, 100);
 
-                var folderName = Path.Combine("Resources", "Images");
-                var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
+                var path = env.WebRootFileProvider.GetFileInfo("images/leaderboard.png")?.PhysicalPath;
                 using (var ms = new MemoryStream(img)) {
-                    using (var fs = new FileStream(pathToSave, FileMode.Create)) {
+                    using (var fs = new FileStream(path, FileMode.Create)) {
                         ms.WriteTo(fs);
                     }
                 }
