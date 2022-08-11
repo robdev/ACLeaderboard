@@ -1,7 +1,7 @@
 ﻿using HtmlAgilityPack;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
+using System.Collections.Generic; 
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -30,15 +30,17 @@ namespace LeaderboardAPI.Controllers {
         public async Task<IActionResult> GetLeaderboardImage(string url) {
             var decoded = System.Net.WebUtility.UrlDecode(url);
             List<LapTime> laps = await GetLapTimes(decoded);
-
+            if (laps == null || laps.Count == 0) {
+                return Ok();
+            }
             var hash = laps.GetHashCode();
             if (hash == Storage.LaptimesHash) {
                 return Ok();
             }
             if (laps != null && laps.Count > 0) {
                 StringBuilder sb = new StringBuilder();
-                sb.Append("<html><link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\">");
-                sb.Append("<body style=\"background-color:  #ff33cc;\"><div style=\"width: 640px; height: auto !important; margin-bottom: 0px;\"><table class=\"table table-dark table-responsive table-striped\"><tr><th>Pos.</th><th>Name</th><th>Car</th><th>Time</th><th>Gap</th></tr>");
+                sb.Append("<html style=\"padding-bottom: 0px; margin-bottom: 0px; display: block; height: auto;\"><link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css\" integrity=\"sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T\" crossorigin=\"anonymous\">");
+                sb.Append("<body style=\"display: block; background-color:  #ff33cc;\"><div style=\"display: block; width: auto; height: 100%; !important; padding-bottom: 0px, margin-bottom: 0px;\"><table class=\"table table-dark table-responsive table-striped\" style=\"display: block; height: 100%;\"><tr><th>Pos.</th><th>Name</th><th>Car</th><th>Time</th><th>Gap</th></tr>");
                 foreach (var lap in laps) {
                     sb.Append("<tr><td>");
                     sb.Append(lap.Position);
@@ -50,10 +52,12 @@ namespace LeaderboardAPI.Controllers {
                     sb.Append(lap.Time);
                     sb.Append("</td><td>");
                     sb.Append(lap.Gap);
+                    sb.Append("</tr>");
                     //sb.Append("</td><td>");
                     //sb.Append(lap.Date);
                     //sb.Append("</td></tr>");
                 }
+
                 sb.Append("</table></div></body></html>");
 
                 string html = sb.ToString();
