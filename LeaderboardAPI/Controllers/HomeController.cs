@@ -63,7 +63,7 @@ namespace LeaderboardAPI.Controllers {
             List<LapTime> times = new List<LapTime>();
             foreach (var node in nodes) {
                 LapTime time = new LapTime();
-                var laptimeNodes = node.Descendants().Where(x => x.Attributes != null && x.Attributes.Count > 0 && x.Attributes.Contains("class") && x.Attributes["class"].Value == "bestLap").ToList();
+                var laptimeNodes = node.Descendants().Where(x => x.Name == "td").ToList();
 
                 time.Position = laptimeNodes.ElementAt(0).InnerHtml;
                 time.Position = time.Position.Remove(time.Position.Length - 1, 1);
