@@ -8,15 +8,16 @@
 
     <div class="row">
 
-    <div class="col-8">
+    <div class="col-12">
         <div style="width: 60%; padding-block:auto;     margin-left: auto; margin-right: auto;">
 
         <div class="row">
 
             <div class="col-6">
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" value="" onclick="refreshGrid()" id="chkOneEntry" checked="@ViewBag.OneEntryPerDriver">
-                    <label style="color: whitesmoke;" class="form-check-label" for="flexCheckDefault">
+                   
+                    <label style="color: whitesmoke;" class="form-check-label">
+                         <input class="form-check-input" type="checkbox" value="" onclick="refreshGrid()" id="chkOneEntry" checked="@ViewBag.OneEntryPerDriver">
                         One Entry Per Driver
                     </label>
                 </div>
@@ -25,8 +26,9 @@
             <div class="col-6">
                 
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" onclick="refreshGrid()" value="" id="chkDriftCars" checked="@ViewBag.DriftCarsOnly">
-                    <label style="color: whitesmoke;" class="form-check-label" for="flexCheckDefault">
+                   
+                    <label style="color: whitesmoke;" class="form-check-label">
+                         <input class="form-check-input" type="checkbox" onclick="refreshGrid()" value="" id="chkDriftCars" checked="@ViewBag.DriftCarsOnly">
                         Drift Cars Only
                     </label>
                 </div>
