@@ -69,7 +69,7 @@ namespace LeaderboardAPI.Controllers {
             string driftUrl = config[""];
 
             ViewBag.LapTimes = await GetLapTimes(url.ToString());
-            ViewBag.DriftScores = await GetDriftScores(forceRefresh);
+           // ViewBag.DriftScores = await GetDriftScores(forceRefresh);
 
             return View();
         }
@@ -90,8 +90,9 @@ namespace LeaderboardAPI.Controllers {
 
                 string html = "";
                 using (HttpClient client = new HttpClient()) {
-                    var url = "https://leaderboardfunctionsapi.azure-api.net/LeaderboardFunctions/GetLeaderboardFunction?url=" + parameters.Url +"&username=" + parameters.UserName + "&password=" + parameters.Password;
-                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url);    
+                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "http://localhost:7071/api/GetLeaderboardFunction");
+                    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                  
                     var response = await client.SendAsync(request);
                     if (response.IsSuccessStatusCode) {
                         html = await response.Content.ReadAsStringAsync();
