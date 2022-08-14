@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -68,72 +69,76 @@ namespace LeaderboardAPI.Controllers {
             string driftUrl = config[""];
 
             ViewBag.LapTimes = await GetLapTimes(url.ToString());
-            //ViewBag.DriftScores = await GetDriftScores(forceRefresh);
+            ViewBag.DriftScores = await GetDriftScores(forceRefresh);
 
             return View();
         }
 
-        //private async Task<List<DriftScore>> GetDriftScores(bool forceRefresh) {
 
-        //    if (forceRefresh || ((driftScores == null || driftScores.Count == 0) || (lastUpdated != DateTime.MinValue && (DateTime.Now - lastUpdated).TotalHours > 0.5))) {
-        //        List<DriftScore> scores = new List<DriftScore>();
 
-        //        using (var client = new HttpClient()) {
-        //            using var browserFetcher = new BrowserFetcher();
-        //            await browserFetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
-        //            var browser = await Puppeteer.LaunchAsync(new LaunchOptions { Headless = true });
-        //            var page = await browser.NewPageAsync();
-        //            await page.GoToAsync(serverBaseUrl + "live-timing");
-        //            await page.TypeAsync("input[type=text]", config["ApiUsername"]);
-        //            await page.TypeAsync("input[type=password]", config["ApiPassword"]);
-        //            await page.ClickAsync("button[type=submit]");
-        //            var navTask = page.WaitForNavigationAsync();
-        //            await page.GoToAsync(serverBaseUrl + "live-timing");
-        //            await navTask;
-        //            await page.WaitForNetworkIdleAsync(new WaitForNetworkIdleOptions { IdleTime = 5000 });
-        //            var content = await page.GetContentAsync();
-        //            await page.CloseAsync();
-        //            await browser.CloseAsync();
-        //            browserFetcher.Dispose();
+        private async Task<List<DriftScore>> GetDriftScores(bool forceRefresh) {
 
-        //            HtmlDocument doc = new HtmlDocument();
-        //            doc.LoadHtml(content);
+            if (forceRefresh || ((driftScores == null || driftScores.Count == 0) || (lastUpdated != DateTime.MinValue && (DateTime.Now - lastUpdated).TotalHours > 0.5))) {
+                List<DriftScore> scores = new List<DriftScore>();
 
-        //            List<HtmlNode> driverNodes = doc.DocumentNode
-        //                .Descendants()
-        //                .Where(x => x.HasClass("driver-row"))
-        //                .ToList();
+                var parameters = new AzureFunctionParams();
 
-        //            if (driverNodes.Count == 0) {
-        //                return driftScores;
-        //            }
-        //            foreach (var node in driverNodes) {
-        //                if (node.Descendants().Any(x => x.HasClass("drift-best-lap-score"))) {
-        //                    var name = node.Descendants().Where(x => x.HasClass("driver-name"))
-        //                        .ToList().First().InnerHtml;
-        //                    int index = name.IndexOf("<");
-        //                    if (index >= 0)
-        //                        name = name.Substring(0, index);
-        //                    var score = node.Descendants().Where(x => x.HasClass("drift-best-lap-score"))
-        //                        .ToList().First().InnerHtml.Replace("Best Score: ", "");
-        //                    if (!scores.Any(x => x.Name == name)) {
-        //                        scores.Add(new DriftScore { Name = name, Score = int.Parse(score) });
-        //                    }
-        //                }
-        //            }
-        //            if (scores.Count > 0) {
-        //                scores = scores.OrderByDescending(x => x.Score).ToList();
-        //                foreach (var score in scores) {
-        //                    score.Position = (scores.IndexOf(score) + 1).ToString();
-        //                }
-        //            }
+                parameters.Url = config["ServerBaseUrl"] + "live-timing";
+                parameters.UserName = config["ApiUserName"];
+                parameters.Password = config["ApiPassword"];
+                string json = JsonConvert.SerializeObject(parameters);
 
-        //        }
-        //        driftScores = scores;
-        //        lastUpdated = DateTime.Now;
-        //    }
-        //    return driftScores;
-        //}
+                string html = "";
+                using (HttpClient client = new HttpClient()) {
+                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, config["AzureFunctionUrl"]);
+                    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                  
+                    var response = await client.SendAsync(request);
+                    if (response.IsSuccessStatusCode) {
+                        html = await response.Content.ReadAsStringAsync();
+                    } else {
+                        return driftScores;
+                    }
+                }
+
+                HtmlDocument doc = new HtmlDocument();
+                doc.LoadHtml(html);
+
+                List<HtmlNode> driverNodes = doc.DocumentNode
+                    .Descendants()
+                    .Where(x => x.HasClass("driver-row"))
+                    .ToList();
+
+                if (driverNodes.Count == 0) {
+                    return driftScores;
+                }
+                foreach (var node in driverNodes) {
+                    if (node.Descendants().Any(x => x.HasClass("drift-best-lap-score"))) {
+                        var name = node.Descendants().Where(x => x.HasClass("driver-name"))
+                            .ToList().First().InnerHtml;
+                        int index = name.IndexOf("<");
+                        if (index >= 0)
+                            name = name.Substring(0, index);
+                        var score = node.Descendants().Where(x => x.HasClass("drift-best-lap-score"))
+                            .ToList().First().InnerHtml.Replace("Best Score: ", "");
+                        if (!scores.Any(x => x.Name == name)) {
+                            scores.Add(new DriftScore { Name = name, Score = int.Parse(score) });
+                        }
+                    }
+                }
+                if (scores.Count > 0) {
+                    scores = scores.OrderByDescending(x => x.Score).ToList();
+                    foreach (var score in scores) {
+                        score.Position = (scores.IndexOf(score) + 1).ToString();
+                    }
+                }
+
+                
+                driftScores = scores;
+                lastUpdated = DateTime.Now;
+            }
+            return driftScores;
+        }
 
         private string GetTrackIdFromUrl(string track) {
             if (track == null) return "ek_akagi-downhill_real";
@@ -237,5 +242,11 @@ namespace LeaderboardAPI.Controllers {
         public IActionResult Error() {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+    }
+    [System.Serializable]
+    public class AzureFunctionParams {
+        public string Url { get; set; }
+        public string UserName { get; set; }
+        public string Password { get; set; }
     }
 }

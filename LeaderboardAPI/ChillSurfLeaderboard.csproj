@@ -1,20 +1,24 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Controllers\api\**" />
+    <Content Remove="Controllers\api\**" />
+    <EmbeddedResource Remove="Controllers\api\**" />
+    <None Remove="Controllers\api\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CoreHtmlToImage" Version="1.0.6" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.43" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="wwwroot\images\leaderboard.png" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controllers\api\" />
   </ItemGroup>
 
 </Project>
