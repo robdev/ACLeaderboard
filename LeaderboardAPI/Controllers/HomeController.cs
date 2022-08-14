@@ -14,7 +14,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
-
+using System.Web;
 
 namespace LeaderboardAPI.Controllers {
     public class HomeController : Controller {
@@ -83,16 +83,15 @@ namespace LeaderboardAPI.Controllers {
 
                 var parameters = new AzureFunctionParams();
 
-                parameters.Url = config["ServerBaseUrl"] + "live-timing";
+                parameters.Url = HttpUtility.UrlEncode(config["ServerBaseUrl"] + "live-timing");
                 parameters.UserName = config["ApiUserName"];
                 parameters.Password = config["ApiPassword"];
                 string json = JsonConvert.SerializeObject(parameters);
 
                 string html = "";
                 using (HttpClient client = new HttpClient()) {
-                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, config["AzureFunctionUrl"]);
-                    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
-                  
+                    var url = "https://leaderboardfunctionsapi.azure-api.net/LeaderboardFunctions/GetLeaderboardFunction?url=" + parameters.Url +"&username=" + parameters.UserName + "&password=" + parameters.Password;
+                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url);    
                     var response = await client.SendAsync(request);
                     if (response.IsSuccessStatusCode) {
                         html = await response.Content.ReadAsStringAsync();
