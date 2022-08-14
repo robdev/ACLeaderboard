@@ -7,11 +7,14 @@
   <ItemGroup>
     <PackageReference Include="CoreHtmlToImage" Version="1.0.6" />
     <PackageReference Include="HtmlAgilityPack" Version="1.11.43" />
-    <PackageReference Include="PuppeteerSharp" Version="7.1.0" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="wwwroot\images\leaderboard.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Controllers\api\" />
   </ItemGroup>
 
 </Project>
