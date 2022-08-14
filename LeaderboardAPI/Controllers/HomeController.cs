@@ -1,47 +1,152 @@
 ﻿using HtmlAgilityPack;
 using LeaderboardAPI.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
+using PuppeteerSharp;
 
 namespace LeaderboardAPI.Controllers {
     public class HomeController : Controller {
         private readonly ILogger<HomeController> _logger;
         private readonly IConfiguration config;
 
+        private readonly string statsBaseUrl;
+        private readonly List<string> tracks;
+        private readonly List<string> cars;
+        private readonly List<string> driftCars;
+        private readonly string serverBaseUrl;
+        private static DateTime lastUpdated = DateTime.MinValue;
+
+        private static List<DriftScore> driftScores = new List<DriftScore>();
+
         public HomeController(ILogger<HomeController> logger, IConfiguration configuration) {
             _logger = logger;
             config = configuration;
+            statsBaseUrl = config["StatsBaseUrl"];
+            serverBaseUrl = config["ServerBaseUrl"];
+            tracks = config["Tracks"].Split(",").ToList();
+            cars = config["Cars"].Split(",").ToList();
+            driftCars = config["DriftCars"].Split(",").ToList();
         }
 
-        public async Task<IActionResult> Index(string track) {
+        public async Task<IActionResult> Index(string track = "akagi", bool oneEntryPerDriver = true, bool driftCarsOnly = false, bool forceRefresh = false) {
 
+            ////http://plugins.barnabysbestmotoring.emperorservers.com:9611/lapstat?track=ek_akagi-downhill_real&cars=ddm_mitsubishi_evo_iv_gsr,ddm_mugen_civic_ek9,ddm_nissan_skyline_bnr32,ddm_subaru_22b,ddm_toyota_mr2_sw20,ks_mazda_rx7_spirit_r,ks_nissan_skyline_r34,ks_toyota_ae86_tuned,ks_toyota_supra_mkiv,wdts_nissan_180sx,wdts_nissan_laurel_c33,wdts_nissan_silvia_s13,wdts_nissan_skyline_r32,wdts_toyota_ae86,wdts_toyota_mark_ii_jzx90&valid=1,2,0&date_from=&date_to=&ranking=1
+            ////http://plugins.barnabysbestmotoring.emperorservers.com:9611/lapstat&track=ek_akagi-downhill_real&cars=ddm_mitsubishi_evo_iv_gsr,ddm_mugen_civic_ek9,ddm_nissan_skyline_bnr32,ddm_subaru_22b,ddm_toyota_mr2_sw20,ks_mazda_rx7_spirit_r,ks_nissan_skyline_r34,ks_toyota_ae86_tuned,ks_toyota_supra_mkiv,wdts_nissan_180sx,wdts_nissan_laurel_c33,wdts_nissan_silvia_s13,wdts_nissan_skyline_r32,wdts_toyota_ae86,wdts_toyota_mark_ii_jzx90&valid=1,2,0&date_from=&date_to=&ranking=1}
+            var currentTrack = GetTrackIdFromUrl(track);
             List<SelectListItem> tracks = new List<SelectListItem>();
-            tracks.Add(new SelectListItem("Akagi", "akagi"));
-            tracks.Add(new SelectListItem("Tsushisaka", "tsushisaka"));
-            ViewBag.track = tracks;
 
-            string url = "";
-            string name = "Leaderboard";
-            switch(track) {
-                case "akina":
-                default:
-                    return View();
-                case "akagi":
-                    url = config["UrlAkagi"];
-                    name = "Leaderboard - Akagi Downhill";
-                    break;
+            StringBuilder url = new StringBuilder();
+            url.Append(config["StatsBaseUrl"]);
+            url.Append("?track=" + currentTrack);
+            if (driftCarsOnly) {
+                url.Append("&cars=" + string.Join(",", driftCars));
+            } else {
+                url.Append("&cars=" + string.Join(",", cars));
             }
-            ViewBag.LeaderboardName = name;
-            ViewBag.LapTimes = await GetLapTimes(url);
+            url.Append("&valid=1,2,0&date_from=&date_to=");
+            if (oneEntryPerDriver) {
+                url.Append("&ranking=1");
+            }
+
+            ViewBag.OneEntryPerDriver = oneEntryPerDriver;
+            ViewBag.DriftCarsOnly = driftCarsOnly;
+            ViewBag.track = tracks;
+            ViewBag.CurrentTrack = track;
+            ViewBag.LeaderboardName = GetTrackNameFromDirName(currentTrack);
+
+            string driftUrl = config[""];
+
+            ViewBag.LapTimes = await GetLapTimes(url.ToString());
+            ViewBag.DriftScores = await GetDriftScores(forceRefresh);
+
             return View();
+        }
+
+        private async Task<List<DriftScore>> GetDriftScores(bool forceRefresh) {
+
+            if (forceRefresh || ((driftScores == null || driftScores.Count == 0) || (lastUpdated != DateTime.MinValue && (DateTime.Now - lastUpdated).TotalHours > 0.5))) {
+                List<DriftScore> scores = new List<DriftScore>();
+
+                using (var client = new HttpClient()) {
+                    using var browserFetcher = new BrowserFetcher();
+                    await browserFetcher.DownloadAsync(BrowserFetcher.DefaultChromiumRevision);
+                    var browser = await Puppeteer.LaunchAsync(new LaunchOptions { Headless = true });
+                    var page = await browser.NewPageAsync();
+                    await page.GoToAsync(serverBaseUrl + "live-timing");
+                    await page.TypeAsync("input[type=text]", config["ApiUsername"]);
+                    await page.TypeAsync("input[type=password]", config["ApiPassword"]);
+                    await page.ClickAsync("button[type=submit]");
+                    var navTask = page.WaitForNavigationAsync();
+                    await page.GoToAsync(serverBaseUrl + "live-timing");
+                    await navTask;
+                    await page.WaitForNetworkIdleAsync(new WaitForNetworkIdleOptions { IdleTime = 5000 });
+                    var content = await page.GetContentAsync();
+                    await page.CloseAsync();
+                    await browser.CloseAsync();
+                    browserFetcher.Dispose();
+
+                    HtmlDocument doc = new HtmlDocument();
+                    doc.LoadHtml(content);
+
+                    List<HtmlNode> driverNodes = doc.DocumentNode
+                        .Descendants()
+                        .Where(x => x.HasClass("driver-row"))
+                        .ToList();
+
+                    if (driverNodes.Count == 0) {
+                        return driftScores;
+                    }
+                    foreach (var node in driverNodes) {
+                        if (node.Descendants().Any(x => x.HasClass("drift-best-lap-score"))) {
+                            var name = node.Descendants().Where(x => x.HasClass("driver-name"))
+                                .ToList().First().InnerHtml;
+                            int index = name.IndexOf("<");
+                            if (index >= 0)
+                                name = name.Substring(0, index);
+                            var score = node.Descendants().Where(x => x.HasClass("drift-best-lap-score"))
+                                .ToList().First().InnerHtml.Replace("Best Score: ", "");
+                            if (!scores.Any(x => x.Name == name)) {
+                                scores.Add(new DriftScore { Name = name, Score = int.Parse(score) });
+                            }
+                        }
+                    }
+                    if (scores.Count > 0) {
+                        scores = scores.OrderByDescending(x => x.Score).ToList();
+                        foreach (var score in scores) {
+                            score.Position = (scores.IndexOf(score) + 1).ToString();
+                        }
+                    }
+
+                }
+                driftScores = scores;
+                lastUpdated = DateTime.Now;
+            }
+            return driftScores;
+        }
+
+        private string GetTrackIdFromUrl(string track) {
+            if (track == null) return "ek_akagi-downhill_real";
+            switch (track.ToLower()) {
+                case "akagi":
+                case "ek_akagi-downhill_real":
+                case "ek_akagi_downhill_real":
+                case "akagi-downhill":
+                case "akagidownhill":
+                    return "ek_akagi-downhill_real";
+                default:
+                    return "ek_akagi-downhill_real";
+            }
         }
 
         private async Task<List<LapTime>> GetLapTimes(string url) {
@@ -51,6 +156,7 @@ namespace LeaderboardAPI.Controllers {
                 HttpResponseMessage response = await client.SendAsync(request);
                 html = await response.Content.ReadAsStringAsync();
             }
+
             HtmlDocument document = new HtmlDocument();
             document.LoadHtml(html);
 
@@ -74,11 +180,19 @@ namespace LeaderboardAPI.Controllers {
                 if (time.Gap == "+00.000") {
                     time.Gap = " --.---";
                 }
-                //time.Date = node.ChildNodes.Last(x => x.Name == "td").InnerHtml;
 
                 times.Add(time);
             }
             return times;
+        }
+
+        private string GetTrackNameFromDirName(string dirName) {
+            switch (dirName) {
+                case "ek_akagi-downhill_real":
+                    return "Akagi Downhill";
+                default:
+                    return dirName;
+            }
         }
 
         private string GetCarNameFromDirName(string dirName) {
@@ -117,10 +231,6 @@ namespace LeaderboardAPI.Controllers {
                 default:
                     return dirName;
             }
-        }
-
-        public IActionResult Privacy() {
-            return View();
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

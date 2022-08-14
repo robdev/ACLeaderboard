@@ -22,6 +22,14 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
+    },
+    "LeaderboardAPIProd": {
+      "commandName": "Prod",
+      "launchBrowser": true,
+      "applicationUrl": "https://acleaderboardapi20220810144158.azurewebsites.net/",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Production"
+      }
     }
   }
 }

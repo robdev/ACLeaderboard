@@ -8,8 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 using CoreHtmlToImage;
 using System.IO;
-using Microsoft.AspNetCore.Hosting;
 using LeaderboardAPI.Models;
+using Microsoft.AspNetCore.Hosting;
 
 namespace LeaderboardAPI.Controllers {
 
@@ -21,10 +21,6 @@ namespace LeaderboardAPI.Controllers {
     [ApiController]
     public class LeaderboardController : ControllerBase {
 
-        private readonly IHostingEnvironment env;
-        public LeaderboardController(IHostingEnvironment env) {
-            this.env = env;
-        }
 
         [HttpGet("getleaderboardhtml")]
         public async Task<IActionResult> GetLeaderboardHtml(string url) {
@@ -104,12 +100,6 @@ namespace LeaderboardAPI.Controllers {
 
                 byte[] img = new CoreHtmlToImage.HtmlConverter().FromHtmlString(html, 640, ImageFormat.Png, 100);
 
-                var path = env.WebRootFileProvider.GetFileInfo("images/leaderboard.png")?.PhysicalPath;
-                using (var ms = new MemoryStream(img)) {
-                    using (var fs = new FileStream(path, FileMode.Create)) {
-                        ms.WriteTo(fs);
-                    }
-                }
                 return Ok();
             }
             return Ok();

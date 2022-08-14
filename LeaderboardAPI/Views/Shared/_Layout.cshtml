@@ -7,16 +7,41 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
 </head>
-<body style="background-color: #141414">
-
+<body style="background-color:#161517" >
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark box-shadow mb-3" style="background-color: #0057b6">
+            <div style=" width: fit-content; margin-right: auto; margin-left: auto; color: whitesmoke" class="container">
+              <div><h2>Team Chill Surf ~ Touge ~ Leaderboard</h2></div>
+              <div style="margin-left: 30px;" class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav mr-auto">
+                  <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      Select Track
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                      <a class="dropdown-item" href="">Akagi</a>
+                      <a class="dropdown-item disabled" disabled="true" href="#">Usui</a>
+                      <a class="dropdown-item disabled" disabled="true" href="#">Tsuchisaka</a>
+                    </div>
+                </ul>
+              </div>
+            </div>
+        </nav>
+    </header>
     <div class="container">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
+    <div class="container">
+            @RenderSection("Footer")
+
+    </div>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <div style="height: 30px"></div>
     @RenderSection("Scripts", required: false)
 </body>
+
 </html>
