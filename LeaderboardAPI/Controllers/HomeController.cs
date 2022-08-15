@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using System.Web;
 
 namespace LeaderboardAPI.Controllers {
+
     public class HomeController : Controller {
         private readonly ILogger<HomeController> _logger;
         private readonly IConfiguration config;
@@ -48,7 +49,7 @@ namespace LeaderboardAPI.Controllers {
             List<SelectListItem> tracks = new List<SelectListItem>();
 
             StringBuilder url = new StringBuilder();
-            url.Append(config["StatsBaseUrl"]);
+            url.Append(statsBaseUrl);
             url.Append("?track=" + currentTrack);
             if (driftCarsOnly) {
                 url.Append("&cars=" + string.Join(",", driftCars));
@@ -68,7 +69,7 @@ namespace LeaderboardAPI.Controllers {
 
             string driftUrl = config[""];
 
-            ViewBag.LapTimes = await GetLapTimes(url.ToString());
+            ViewBag.LapTimes = await GetLapTimes(url.ToString(), statsBaseUrl);
            // ViewBag.DriftScores = await GetDriftScores(forceRefresh);
 
             return View();
@@ -154,24 +155,50 @@ namespace LeaderboardAPI.Controllers {
             }
         }
 
-        private async Task<List<LapTime>> GetLapTimes(string url) {
+
+        private async Task<List<LapTime>> GetLapTimes(string url, string baseUrl) {
             string html = "";
             using (var client = new HttpClient()) {
                 HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url);
                 HttpResponseMessage response = await client.SendAsync(request);
                 html = await response.Content.ReadAsStringAsync();
             }
+            List<LapTime> times = new List<LapTime>();
+
 
             HtmlDocument document = new HtmlDocument();
             document.LoadHtml(html);
 
+            times.AddRange(LoadLapTimes(document));
+
+            HtmlNode paginationParent = document.DocumentNode.Descendants().First(x => x.HasClass("pagination"));
+            List<HtmlNode> paginationNodes = paginationParent.Descendants()
+                .Where(x => x.Attributes != null && x.Attributes.Count > 0 && x.Attributes.Contains("href") && Util.IsNumeric(x.InnerHtml) && x.InnerHtml != "1")
+                .ToList();
+
+            foreach (var pageNode in paginationNodes) {
+                var link = pageNode.Attributes["href"].Value;
+                using (var client = new HttpClient()) {
+                    HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, baseUrl.Replace("lapstat", "") + link);
+                    HttpResponseMessage response = await client.SendAsync(request);
+                    html = await response.Content.ReadAsStringAsync();
+                    HtmlDocument doc = new HtmlDocument();
+                    doc.LoadHtml(html);
+                    times.AddRange(LoadLapTimes(doc));
+                }
+            }
+            return times;
+        }
+
+
+        private List<LapTime> LoadLapTimes(HtmlDocument document) {
             List<HtmlNode> nodes = document.DocumentNode
                 .Descendants()
                 .Where(x => x.Attributes != null && x.Attributes.Count > 0 && x.Attributes.Contains("href") && x.Attributes["href"].Value.StartsWith("lapdetails"))
                 .ToList();
 
-
             List<LapTime> times = new List<LapTime>();
+
             foreach (var node in nodes) {
                 LapTime time = new LapTime();
                 var laptimeNodes = node.Descendants().Where(x => x.Name == "td").ToList();
@@ -248,5 +275,10 @@ namespace LeaderboardAPI.Controllers {
         public string Url { get; set; }
         public string UserName { get; set; }
         public string Password { get; set; }
+    }
+
+    public static class Util {
+        public static bool IsNumeric(this string value) => value.All(char.IsNumber);
+
     }
 }
