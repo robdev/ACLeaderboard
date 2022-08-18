@@ -75,7 +75,9 @@ namespace LeaderboardAPI.Controllers {
             return View();
         }
 
-
+        private class Cookie {
+            string message;
+        }
 
         private async Task<List<DriftScore>> GetDriftScores(bool forceRefresh) {
 
@@ -86,8 +88,34 @@ namespace LeaderboardAPI.Controllers {
 
                 parameters.Url = HttpUtility.UrlEncode(config["ServerBaseUrl"] + "live-timing");
                 parameters.UserName = config["ApiUserName"];
-                parameters.Password = config["ApiPassword"];
+                parameters.Password = "chillsurfpublic"; // config["ApiPassword"];
                 string json = JsonConvert.SerializeObject(parameters);
+
+                string loginUrl = serverBaseUrl + "login";
+                Dictionary<string, string> kvp = new System.Collections.Generic.Dictionary<string, string>();
+                kvp.Add("Username", "api");
+                kvp.Add("Password", "chillsurfpublic");
+                // FormCollection keys = new FormCollection(kvp);
+                var formContent = new FormUrlEncodedContent(kvp);
+                string loginHtml = "";
+                using (var client = new HttpClient()) {
+
+                    HttpRequestMessage login = new HttpRequestMessage(HttpMethod.Post, loginUrl);
+                    
+                    //HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, url);
+                    login.Content = formContent;
+                    HttpResponseMessage response = await client.SendAsync(login);
+                    if (response.IsSuccessStatusCode) {
+                        IEnumerable<string> values = new List<string>();
+                        var thing = response.Headers.TryGetValues("Set-Cookie", out values);
+                        List<string> cookies = values.ToList<string>();
+                        loginHtml = await response.Content.ReadAsStringAsync();
+
+                        string message = cookies[0].Split(";").ToList().First().Replace("message=", "");
+                    }
+                }
+
+
 
                 string html = "";
                 using (HttpClient client = new HttpClient()) {
@@ -184,7 +212,12 @@ namespace LeaderboardAPI.Controllers {
                     html = await response.Content.ReadAsStringAsync();
                     HtmlDocument doc = new HtmlDocument();
                     doc.LoadHtml(html);
-                    times.AddRange(LoadLapTimes(doc));
+                     List<LapTime> pageTimes = LoadLapTimes(doc);
+                    foreach (var time in pageTimes) {
+                        if (!times.Any(x => x.Position == time.Position)) {
+                            times.Add(time);
+                        }
+                    }
                 }
             }
             return times;
